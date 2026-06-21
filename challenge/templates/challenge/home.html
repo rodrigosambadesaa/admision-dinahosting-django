@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Prueba técnica Dinahosting{% endblock %}
+
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+<main class="shell">
+    <section class="hero-card">
+        <p class="eyebrow">Port a Django</p>
+        <h1>Prueba técnica Dinahosting</h1>
+        <p class="lead">
+            Reimplementación en Django de los tres ejercicios del repositorio original:
+            Fibonacci, formulario interactivo y pantalla de login.
+        </p>
+        <div class="card-grid">
+            <a class="nav-card" href="{% url 'challenge:fibonacci' %}">
+                <span class="nav-label">Ejercicio 1 y 2</span>
+                <strong>Fibonacci en rangos UTC</strong>
+                <span>Vista web en Django y comando CLI con soporte para timestamps sintéticos grandes.</span>
+            </a>
+            <a class="nav-card" href="{% url 'challenge:login' %}">
+                <span class="nav-label">Ejercicio 3</span>
+                <strong>Login HTML5</strong>
+                <span>Formulario estático con validación nativa y la misma intención visual del entregable original.</span>
+            </a>
+        </div>
+        <p class="subtle">
+            También puedes ejecutar <code>python manage.py fibonacci "2026-06-01 00:00:00" "2026-06-30 23:59:59"</code>.
+        </p>
+    </section>
+</main>
+{% endblock %}

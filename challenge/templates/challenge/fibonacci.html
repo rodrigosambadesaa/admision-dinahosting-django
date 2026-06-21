@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Fibonacci en rangos UTC{% endblock %}
+
+{% block body_class %}fibonacci-page{% endblock %}
+
+{% block csp %}default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; script-src 'none'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests{% endblock %}
+
+{% block content %}
+<main class="shell layout-stack">
+    <section class="hero-text">
+        <p class="eyebrow">Prueba técnica</p>
+        <h1>Fibonacci entre timestamps UTC</h1>
+        <p class="lead">
+            Introduce dos fechas con formato <code>Y-m-d H:i:s</code> y obtén los resultados para el mes actual,
+            el año actual y tu rango personalizado.
+        </p>
+        <p class="lead">
+            Para pruebas extremas también puedes usar <code>ts:&lt;bigint&gt;</code>, por ejemplo
+            <code>ts:123456789012345678901234567890</code>.
+        </p>
+    </section>
+
+    <section class="panel-card">
+        <form method="post" novalidate autocomplete="off">
+            {% csrf_token %}
+            <div class="field-group">
+                <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
+                {{ form.start_date }}
+                {% for error in form.start_date.errors %}
+                    <p class="error-message">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <div class="field-group">
+                <label for="{{ form.end_date.id_for_label }}">{{ form.end_date.label }}</label>
+                {{ form.end_date }}
+                {% for error in form.end_date.errors %}
+                    <p class="error-message">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% for error in form.non_field_errors %}
+                <p class="error-message">{{ error }}</p>
+            {% endfor %}
+            <button type="submit" class="button-primary">Calcular</button>
+        </form>
+    </section>
+
+    {% if sections %}
+        <section class="results-grid">
+            {% for section in sections %}
+                <article class="result-card">
+                    <h2>{{ section.label }}</h2>
+                    <p><strong>Inicio:</strong> {{ section.range.start_label }}</p>
+                    <p><strong>Fin:</strong> {{ section.range.end_label }}</p>
+                    <p><strong>Timezone / modo:</strong> {{ section.range.timezone }}</p>
+                    {% if section.values %}
+                        <ul class="result-list">
+                            {% for value in section.values %}
+                                <li>{{ value }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="empty-state">No hay timestamps Fibonacci dentro de este rango.</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </section>
+    {% endif %}
+</main>
+{% endblock %}
