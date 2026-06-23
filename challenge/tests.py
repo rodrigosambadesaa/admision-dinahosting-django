@@ -49,7 +49,7 @@ class ViewTests(TestCase):
         self.assertContains(response, "Prueba técnica Dinahosting")
 
     def test_fibonacci_form_returns_results(self):
-        response = self.client.post(
+        response = self.client.get(
             "/fibonacci/",
             {
                 "start_date": "ts:0",

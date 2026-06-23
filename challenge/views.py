@@ -10,9 +10,13 @@ def home(request):
 
 def fibonacci_view(request):
     sections = None
-    form = FibonacciForm(request.POST or None)
+    form_data = request.GET if request.method == "GET" and request.GET else None
+    if request.method == "POST":
+        form_data = request.POST
 
-    if request.method == "POST" and form.is_valid():
+    form = FibonacciForm(form_data)
+
+    if form.is_bound and form.is_valid():
         sections = build_fibonacci_sections(
             start_value=form.cleaned_data["start_date"],
             end_value=form.cleaned_data["end_date"],

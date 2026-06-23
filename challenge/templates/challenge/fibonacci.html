@@ -22,8 +22,7 @@
     </section>
 
     <section class="panel-card">
-        <form method="post" novalidate autocomplete="off">
-            {% csrf_token %}
+        <form method="get" novalidate autocomplete="off">
             <div class="field-group">
                 <label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label>
                 {{ form.start_date }}
