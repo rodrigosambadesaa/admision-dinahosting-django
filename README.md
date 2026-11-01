@@ -90,3 +90,23 @@ Además de reproducir la lógica de Fibonacci en Python, la aplicación conserva
 | `/index.html` | `/` |
 
 Las rutas originales también responden directamente en Django. Se conserva `/fibonacci/` como calculadora alternativa procesada en el servidor. La CSP permite scripts propios **únicamente** en las rutas del ejercicio JavaScript; en el resto sigue bloqueándolos. La CI coteja los archivos JS/CSS portados con el commit original fijado y ejecuta sus pruebas con Node.js, además de los tests de Django y el smoke de Docker.
+
+
+## Benchmark reproducible de CPU y memoria
+
+El workflow [Django vs original Fibonacci CPU and RSS benchmark](.github/workflows/fibonacci-benchmark.yml) ejecuta PHP, JavaScript y Python/Django en **el mismo runner Ubuntu** mediante el banco de pruebas del repositorio [original](https://github.com/rodrigosambadesaa/admision-dinahosting/tree/master/benchmarks), fijado al commit c7aeeae6aa9c21580d2c57e553f886d0710ead41.
+
+Compara cuatro rangos (de 0 a 21, fechas reales, enteros sintéticos de 80 y 250 dígitos). Hace cinco muestras independientes por lenguaje y caso, descartando una previa, y exige que coincidan el SHA-256 de toda la secuencia, la longitud, el primer y el último valor.
+
+Se publican dos tipos distintos de mediciones:
+
+- **Algoritmo en caliente**: CPU por resolución, sin contar inicialización del intérprete. Memoria máxima RSS del proceso entero, que incluye también el runtime.
+- **CLI completo**: PHP frente al comando de Django, incluyendo inicio del programa, generación y serialización JSON. JavaScript es una aplicación de navegador y no cuenta con un CLI directamente comparable; su núcleo se evalúa sobre Node/V8, no Chrome.
+
+Cada ejecución publica los archivos results.json y summary.md como artefactos de GitHub Actions. Las mediciones en máquinas virtuales compartidas son orientativas, especialmente cuando las diferencias son pequeñas.
+
+Con ambos repositorios descargados en carpetas hermanas llamadas original/ y django/, y PHP, Node y Python instalados, puede reproducirse así:
+
+~~~bash
+python original/benchmarks/compare.py --original-dir original --django-dir django --output-dir benchmark-results
+~~~
