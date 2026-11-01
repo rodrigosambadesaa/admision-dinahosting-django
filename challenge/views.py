@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.decorators.http import require_GET
 
 from .forms import FibonacciForm, LoginForm
 from .services import build_fibonacci_sections
@@ -32,5 +33,6 @@ def fibonacci_view(request):
     )
 
 
+@require_GET
 def login_view(request):
     return render(request, "challenge/login.html", {"form": LoginForm()})

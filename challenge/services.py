@@ -6,8 +6,10 @@ from typing import Iterable
 import re
 
 
-DATETIME_PATTERN = re.compile(r"^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$")
-INPUT_PATTERN = re.compile(r"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|ts:[+-]?\d+)$")
+# Match the original JavaScript form and PHP CLI: ASCII only, exact UTC dates.
+DATETIME_PATTERN = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})")
+INPUT_PATTERN = re.compile(r"(?:[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}|ts:[+-]?[0-9]{1,256})")
+MAX_SYNTHETIC_DIGITS = 256
 
 
 class InputSanitizationError(ValueError):
@@ -43,13 +45,17 @@ class DateRange:
         object.__setattr__(self, "start_label", start_label)
         object.__setattr__(self, "end_label", end_label)
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict[str, str]:
+        """Match the PHP CLI range object, including exact string timestamps."""
+        def cli_label(label: str) -> str:
+            return label[:-4] if label.endswith(" UTC") else label
+
         return {
-            "start_timestamp": self.start_timestamp,
-            "end_timestamp": self.end_timestamp,
-            "start_label": self.start_label,
-            "end_label": self.end_label,
+            "start": cli_label(self.start_label),
+            "end": cli_label(self.end_label),
             "timezone": self.timezone,
+            "start_timestamp": str(self.start_timestamp),
+            "end_timestamp": str(self.end_timestamp),
         }
 
 
@@ -156,7 +162,7 @@ def sanitize_range_input(value: str) -> str:
     if not sanitized:
         raise InputSanitizationError("La entrada recibida no es válida.")
 
-    if not INPUT_PATTERN.match(sanitized):
+    if len(sanitized) > 260 or not INPUT_PATTERN.fullmatch(sanitized):
         raise InputSanitizationError('Usa "Y-m-d H:i:s" o "ts:<bigint>".')
 
     return sanitized
@@ -165,7 +171,7 @@ def sanitize_range_input(value: str) -> str:
 def parse_range_boundary(value: str) -> RangeBoundary:
     if value.startswith("ts:"):
         raw = value[3:]
-        if not re.fullmatch(r"[+-]?\d+", raw):
+        if len(raw.lstrip("+-")) > MAX_SYNTHETIC_DIGITS or not re.fullmatch(r"[+-]?[0-9]{1,256}", raw):
             raise ValueError('Usa el formato "ts:<bigint>" para timestamps sintéticos extremos.')
 
         return RangeBoundary(
@@ -182,18 +188,28 @@ def parse_range_boundary(value: str) -> RangeBoundary:
 
 
 def parse_utc_datetime(value: str) -> int:
-    match = DATETIME_PATTERN.match(value)
+    match = DATETIME_PATTERN.fullmatch(value)
     if not match:
         raise ValueError('Usa el formato "Y-m-d H:i:s".')
 
     year, month, day, hour, minute, second = (int(part) for part in match.groups())
-    try:
-        date_value = datetime(year, month, day, hour, minute, second, tzinfo=UTC)
-    except ValueError as exc:
-        raise ValueError("La fecha indicada no es válida.") from exc
+    # Python datetime has no year 0000, unlike the original browser implementation.
+    # Calculate epoch seconds with proleptic Gregorian arithmetic and no floats.
+    if not 1 <= month <= 12 or not 0 <= hour <= 23 or not 0 <= minute <= 59 or not 0 <= second <= 59:
+        raise ValueError("La fecha indicada no es válida.")
+    leap = year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+    days_in_month = (31, 29 if leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+    if not 1 <= day <= days_in_month[month - 1]:
+        raise ValueError("La fecha indicada no es válida.")
 
-    return int(date_value.timestamp())
-
+    y = year - (month <= 2)
+    era = y // 400
+    year_of_era = y - era * 400
+    shifted_month = month + (-3 if month > 2 else 9)
+    day_of_year = (153 * shifted_month + 2) // 5 + day - 1
+    year_days = year_of_era * 365 + year_of_era // 4 - year_of_era // 100 + day_of_year
+    days_from_epoch = era * 146097 + year_days - 719468
+    return days_from_epoch * 86400 + hour * 3600 + minute * 60 + second
 
 def format_utc_datetime(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S UTC")

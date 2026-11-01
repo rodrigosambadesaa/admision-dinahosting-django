@@ -6,6 +6,10 @@ services:
     ports:
       - "${WEB_PORT:-8087}:8000"
     working_dir: /app
+    environment:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: development-only-change-me-in-production
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
     volumes:
       - ./:/app
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -15,6 +19,10 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app
+    environment:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: development-only-change-me-in-production
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
     volumes:
       - ./:/app
     command: python manage.py fibonacci "2026-06-01 00:00:00" "2026-06-30 23:59:59"

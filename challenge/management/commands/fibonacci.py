@@ -21,8 +21,8 @@ class Command(BaseCommand):
             raise CommandError(str(exc)) from exc
 
         payload = {}
-        for section in sections:
-            payload[section["label"]] = {
+        for key, section in zip(("current_month", "current_year", "custom_range"), sections, strict=True):
+            payload[key] = {
                 "range": section["range"].to_dict(),
                 "fibonacci_timestamps": [str(value) for value in section["values"]],
             }

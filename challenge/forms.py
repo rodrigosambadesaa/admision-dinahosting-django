@@ -6,7 +6,7 @@ from .services import InputSanitizationError, parse_range_boundary, sanitize_ran
 class FibonacciForm(forms.Form):
     start_date = forms.CharField(
         label="Fecha de inicio (UTC)",
-        max_length=256,
+        max_length=260,
         widget=forms.TextInput(
             attrs={
                 "placeholder": "2026-06-01 00:00:00 o ts:12345678901234567890",
@@ -18,7 +18,7 @@ class FibonacciForm(forms.Form):
     )
     end_date = forms.CharField(
         label="Fecha de fin (UTC)",
-        max_length=256,
+        max_length=260,
         widget=forms.TextInput(
             attrs={
                 "placeholder": "2026-06-30 23:59:59 o ts:12345678901234567999",
@@ -65,7 +65,7 @@ class LoginForm(forms.Form):
         max_length=64,
         widget=forms.PasswordInput(
             attrs={
-                "autocomplete": "current-password",
+                "autocomplete": "off",
                 "pattern": "(?=.*[a-z])(?=.*[A-Z])[A-Za-z0-9]{8,64}",
                 "inputmode": "text",
                 "minlength": "8",
