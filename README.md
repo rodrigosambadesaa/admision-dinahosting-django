@@ -77,3 +77,16 @@ DJANGO_DEBUG=1 python tests/compare_reference.py
 - La Content Security Policy se devuelve como cabecera HTTP además de las restricciones en plantillas.
 
 **Login solo de demostración:** no guarda ni autentica credenciales. No introduzcas contraseñas reales. El formulario envía únicamente a la propia aplicación y esta rechaza los POST. Su objetivo es reproducir el ejercicio visual HTML5/CSS.
+
+## Port de los tres ejercicios originales al navegador Django
+
+Además de reproducir la lógica de Fibonacci en Python, la aplicación conserva ahora la **implementación real de Vanilla JavaScript** de la prueba original, ejecutada directamente en el navegador. No depende de AJAX ni del servidor para calcular y mantiene su propia clase `BigInteger`, validación de entradas, creación segura del DOM y los estilos originales. Los archivos CSS/SCSS del ejercicio de login también se incluyen en Django.
+
+| Ejercicio original | Implementación Django |
+| --- | --- |
+| `/PHP/index.html` | `/php/` (presentación del CLI `manage.py fibonacci`) |
+| `/JAVASCRIPT/index.html` | `/javascript/` (lógica y estilos JavaScript originales) |
+| `/CSS/index.html` | `/login/` (formulario HTML5 con CSS original, envío local no autenticado) |
+| `/index.html` | `/` |
+
+Las rutas originales también responden directamente en Django. Se conserva `/fibonacci/` como calculadora alternativa procesada en el servidor. La CSP permite scripts propios **únicamente** en las rutas del ejercicio JavaScript; en el resto sigue bloqueándolos. La CI coteja los archivos JS/CSS portados con el commit original fijado y ejecuta sus pruebas con Node.js, además de los tests de Django y el smoke de Docker.

@@ -7,8 +7,10 @@ class SecurityHeadersMiddleware:
 
     def __call__(self, request):
         response = self.get_response(request)
+        browser_fibonacci = request.path in {"/javascript/", "/JAVASCRIPT/index.html"}
+        script_policy = "script-src 'self'; " if browser_fibonacci else "script-src 'none'; "
         response["Content-Security-Policy"] = (
-            "default-src 'self'; script-src 'none'; "
+            "default-src 'self'; " + script_policy + "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; "
             "connect-src 'self'; object-src 'none'; base-uri 'none'; "
@@ -19,4 +21,5 @@ class SecurityHeadersMiddleware:
             "microphone=(), payment=(), usb=()"
         )
         response["Cross-Origin-Resource-Policy"] = "same-origin"
+        response["X-Permitted-Cross-Domain-Policies"] = "none"
         return response

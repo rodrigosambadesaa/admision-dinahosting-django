@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Ejercicio 1 - Fibonacci CLI en Django{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<main class="shell">
+    <section class="hero-card">
+        <p class="eyebrow">Ejercicio 1 · Equivalente a PHP CLI</p>
+        <h1>Fibonacci en Python y Django</h1>
+        <p class="lead">Este ejercicio reimplementa el CLI PHP del repositorio original con servicios separados,
+        límites temporales UTC, rangos invertidos y enteros sintéticos de hasta 256 dígitos.</p>
+        <p>Comando local:</p>
+        <pre><code>python manage.py fibonacci "2026-06-01 00:00:00" "2026-06-30 23:59:59"</code></pre>
+        <p>También admite rangos de precisión arbitraria:</p>
+        <pre><code>python manage.py fibonacci "ts:123456789012345678901234567890" "ts:123456789012345678901234568500"</code></pre>
+        <p>Salida JSON: <code>current_month</code>, <code>current_year</code> y <code>custom_range</code>, con marcas de tiempo como cadenas, igual que en PHP.</p>
+        <p>Para calcular desde el navegador mediante Django, utilice la <a href="{% url 'challenge:fibonacci' %}">versión procesada en el servidor</a>.
+        La <a href="{% url 'challenge:javascript' %}">versión JavaScript</a> calcula sin enviar los valores al servidor.</p>
+        <p><a href="{% url 'challenge:home' %}">Volver a la portada</a></p>
+    </section>
+</main>
+{% endblock %}

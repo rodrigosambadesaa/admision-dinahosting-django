@@ -11,13 +11,18 @@
         <h1>Prueba técnica Dinahosting</h1>
         <p class="lead">
             Reimplementación en Django de los tres ejercicios del repositorio original:
-            Fibonacci, formulario interactivo y pantalla de login.
+            Fibonacci en Python, Fibonacci ejecutado en JavaScript en el navegador y pantalla de login.
         </p>
         <div class="card-grid">
-            <a class="nav-card" href="{% url 'challenge:fibonacci' %}">
-                <span class="nav-label">Ejercicio 1 y 2</span>
-                <strong>Fibonacci en rangos UTC</strong>
-                <span>Vista web en Django y comando CLI con soporte para timestamps sintéticos grandes.</span>
+            <a class="nav-card" href="{% url 'challenge:php' %}">
+                <span class="nav-label">Ejercicio 1 · Python/Django</span>
+                <strong>Fibonacci CLI y servidor</strong>
+                <span>Comando de gestión y calculadora procesada por Django, equivalentes al ejercicio PHP.</span>
+            </a>
+            <a class="nav-card" href="{% url 'challenge:javascript' %}">
+                <span class="nav-label">Ejercicio 2 · Vanilla JavaScript</span>
+                <strong>Fibonacci en el navegador</strong>
+                <span>Calculadora original sin peticiones al servidor, BigInteger propio y salida en la misma página.</span>
             </a>
             <a class="nav-card" href="{% url 'challenge:login' %}">
                 <span class="nav-label">Ejercicio 3</span>
@@ -25,6 +30,7 @@
                 <span>Formulario estático con validación nativa y la misma intención visual del entregable original.</span>
             </a>
         </div>
+        <p class="subtle">También se conserva la <a href="{% url 'challenge:fibonacci' %}">calculadora procesada en Django</a> y las rutas originales <code>/PHP/index.html</code>, <code>/JAVASCRIPT/index.html</code> y <code>/CSS/index.html</code>.</p>
         <p class="subtle">
             También puedes ejecutar <code>python manage.py fibonacci "2026-06-01 00:00:00" "2026-06-30 23:59:59"</code>.
         </p>

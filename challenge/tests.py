@@ -129,3 +129,52 @@ class CommandTests(TestCase):
     def test_invalid_cli(self):
         with self.assertRaises(CommandError):
             self.run_cli("ts:" + "1" * 257, "ts:0")
+
+
+class OriginalBrowserPortTests(TestCase):
+    def test_original_three_exercise_entrypoints_exist(self):
+        from django.urls import reverse
+        for url, title in (
+            ("/index.html", "Prueba técnica Dinahosting"),
+            ("/PHP/index.html", "Fibonacci en Python y Django"),
+            ("/JAVASCRIPT/index.html", "Fibonacci entre timestamps UTC"),
+            ("/CSS/index.html", "Inicia sesión"),
+        ):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, title)
+        for name in ("javascript", "php", "login", "fibonacci"):
+            self.assertEqual(self.client.get(reverse("challenge:" + name)).status_code, 200)
+
+    def test_js_exercise_renders_same_browser_controls_and_local_assets(self):
+        from django.contrib.staticfiles import finders
+        for url in ("/javascript/", "/JAVASCRIPT/index.html"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, 'id="fibonacci-form"')
+                self.assertContains(response, 'id="results"')
+                self.assertContains(response, 'id="error-message"')
+                self.assertContains(response, "challenge/javascript/fibonacci.js")
+                self.assertContains(response, "challenge/javascript/styles.css")
+                self.assertIn("script-src 'self'", response["Content-Security-Policy"])
+                self.assertNotIn("script-src 'none'", response["Content-Security-Policy"])
+        self.assertIsNotNone(finders.find("challenge/javascript/fibonacci.js"))
+        self.assertIsNotNone(finders.find("challenge/javascript/styles.css"))
+
+    def test_script_execution_restricted_to_original_browser_exercise(self):
+        for url in ("/", "/php/", "/fibonacci/", "/login/", "/CSS/index.html"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertIn("script-src 'none'", response["Content-Security-Policy"])
+        self.assertEqual(self.client.post("/JAVASCRIPT/index.html").status_code, 405)
+        self.assertEqual(self.client.post("/CSS/index.html").status_code, 405)
+
+    def test_login_uses_original_stylesheet_without_external_submission(self):
+        from django.contrib.staticfiles import finders
+        response = self.client.get("/CSS/index.html")
+        self.assertContains(response, "challenge/login/style.css")
+        self.assertContains(response, 'class="needs-validation"')
+        self.assertContains(response, 'action="/login/"')
+        self.assertNotContains(response, "dinahosting.com/login-usuarios")
+        self.assertIsNotNone(finders.find("challenge/login/style.css"))
