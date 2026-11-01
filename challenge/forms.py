@@ -18,7 +18,7 @@ class FibonacciForm(forms.Form):
     )
     end_date = forms.CharField(
         label="Fecha de fin (UTC)",
-        max_length=256,
+        max_length=260,
         widget=forms.TextInput(
             attrs={
                 "placeholder": "2026-06-30 23:59:59 o ts:12345678901234567999",
