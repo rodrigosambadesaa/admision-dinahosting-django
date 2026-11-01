@@ -1,0 +1,143 @@
+name: Django functional and original-equivalence CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: django-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  django:
+    name: Django tests / Python ${{ matrix.python }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.12', '3.13', '3.14']
+    env:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: ci-only-unsafe-key-not-for-real-deployments
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install locked Django
+        run: python -m pip install -r requirements.txt
+      - name: Syntax check
+        run: python -m compileall -q challenge config tests manage.py
+      - name: Django system check
+        run: python manage.py check
+      - name: Django unit and HTTP view tests
+        run: python manage.py test --verbosity=2
+      - name: Migration consistency
+        run: python manage.py makemigrations --check --dry-run
+
+  equivalence:
+    name: PHP, JS and Django differential tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DJANGO_DEBUG: '1'
+      DJANGO_SECRET_KEY: ci-only-unsafe-key-not-for-real-deployments
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Checkout verified original (fixed reference)
+        uses: actions/checkout@v6
+        with:
+          repository: rodrigosambadesaa/admision-dinahosting
+          ref: 3019da805198f46c72656ac673c49ede7fa89406
+          path: reference
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Install Django
+        run: python -m pip install -r requirements.txt
+      - name: Verify original test suites
+        run: |
+          php reference/tests/php_test.php
+          node --test reference/tests/javascript.test.cjs
+      - name: Compare original PHP and JS against Django
+        run: python tests/compare_reference.py
+
+  security:
+    name: Production configuration checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      DJANGO_DEBUG: '0'
+      DJANGO_SECRET_KEY: ci-test-production-secret-key-that-is-safely-over-fifty-characters-long
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt
+      - name: Django deployment security checks
+        run: python manage.py check --deploy --fail-level WARNING
+      - name: Verify production settings
+        run: |
+          python - <<'PY'
+          from config import settings
+          assert settings.DEBUG is False
+          assert settings.SECURE_SSL_REDIRECT is True
+          assert settings.CSRF_COOKIE_SECURE is True
+          assert settings.SESSION_COOKIE_SECURE is True
+          assert '*' not in settings.ALLOWED_HOSTS
+          print('Production security settings verified')
+          PY
+
+  docker:
+    name: Docker build and HTTP smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate Compose
+        run: docker compose config --quiet
+      - name: Build Django Docker image
+        run: docker build --pull -t dinahosting-django:ci .
+      - name: Start local development server in Docker
+        run: |
+          docker run -d --name dinahosting-django-ci -p 8087:8000 \
+            -e DJANGO_DEBUG=1 \
+            -e DJANGO_SECRET_KEY=ci-only-unsafe-key-not-for-real-deployments \
+            -e DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+            dinahosting-django:ci
+      - name: Smoke-test pages and response policy
+        run: |
+          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://localhost:8087/ | grep -q 'Prueba técnica Dinahosting'
+          curl -fsS 'http://localhost:8087/fibonacci/?start_date=ts%3A5&end_date=ts%3A13' | grep -q 'Rango personalizado'
+          curl -fsS http://localhost:8087/login/ | grep -q 'Demostración sin autenticación'
+          curl -sSI http://localhost:8087/login/ | grep -qi '^Content-Security-Policy:'
+          curl -sSI http://localhost:8087/login/ | grep -qi '^X-Content-Type-Options: nosniff'
+      - name: Dump Docker logs if failed
+        if: failure()
+        run: docker logs dinahosting-django-ci || true
+      - name: Remove Docker container
+        if: always()
+        run: docker rm -f dinahosting-django-ci || true
