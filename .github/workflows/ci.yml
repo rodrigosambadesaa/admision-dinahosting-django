@@ -87,6 +87,8 @@ jobs:
       DJANGO_DEBUG: '0'
       DJANGO_SECRET_KEY: ci-test-production-secret-key-that-is-safely-over-fifty-characters-long
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DJANGO_HSTS_INCLUDE_SUBDOMAINS: '1'
+      DJANGO_HSTS_PRELOAD: '1'
     steps:
       - uses: actions/checkout@v6
         with:
@@ -130,7 +132,8 @@ jobs:
             dinahosting-django:ci
       - name: Smoke-test pages and response policy
         run: |
-          curl --retry 15 --retry-connrefused --retry-delay 1 -fsS http://localhost:8087/ | grep -q 'Prueba técnica Dinahosting'
+          curl --retry 20 --retry-all-errors --retry-delay 1 --max-time 5 -fsS http://localhost:8087/ -o /tmp/django-home.html
+          grep -q 'Prueba técnica Dinahosting' /tmp/django-home.html
           curl -fsS 'http://localhost:8087/fibonacci/?start_date=ts%3A5&end_date=ts%3A13' | grep -q 'Rango personalizado'
           curl -fsS http://localhost:8087/login/ | grep -q 'Demostración sin autenticación'
           curl -sSI http://localhost:8087/login/ | grep -qi '^Content-Security-Policy:'

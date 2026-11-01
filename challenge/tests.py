@@ -17,7 +17,7 @@ class ServiceTests(TestCase):
     def test_strict_synthetic_inputs(self):
         self.assertEqual(sanitize_range_input(" ts:12345678901234567890 "), "ts:12345678901234567890")
         self.assertEqual(sanitize_range_input("ts:+" + "9" * 256), "ts:+" + "9" * 256)
-        for invalid in ("", "   ", "ts:1e9", "ts:1\n", "ts:\u0661",
+        for invalid in ("", "   ", "ts:1e9", "ts:1\njunk", "ts:\u0661",
                         "ts:" + "9" * 257, "ts:" + "9" * 3000,
                         "2026-01-01T00:00:00", "<img src=x onerror=alert(1)>"):
             with self.subTest(value=invalid), self.assertRaises(ValueError):

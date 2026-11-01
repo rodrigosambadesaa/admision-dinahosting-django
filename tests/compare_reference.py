@@ -10,6 +10,7 @@ REF = ROOT / "reference"
 PHP = REF / "PHP" / "fibonacci.php"
 JS = REF / "JAVASCRIPT" / "fibonacci.js"
 DJANGO = ROOT / "manage.py"
+sys.path.insert(0, str(ROOT))
 
 CASES = (
     ("ts:0", "ts:21"),
