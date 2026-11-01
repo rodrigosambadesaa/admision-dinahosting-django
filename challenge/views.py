@@ -36,3 +36,15 @@ def fibonacci_view(request):
 @require_GET
 def login_view(request):
     return render(request, "challenge/login.html", {"form": LoginForm()})
+
+
+@require_GET
+def javascript_view(request):
+    """Original browser-side exercise: calculation happens entirely in JavaScript."""
+    return render(request, "challenge/javascript.html")
+
+
+@require_GET
+def cli_exercise_view(request):
+    """Landing page for the Django equivalent of the PHP CLI exercise."""
+    return render(request, "challenge/cli_exercise.html")

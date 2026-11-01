@@ -76,6 +76,14 @@ jobs:
         run: |
           php reference/tests/php_test.php
           node --test reference/tests/javascript.test.cjs
+      - name: Verify ported original browser assets are identical
+        run: |
+          cmp reference/JAVASCRIPT/fibonacci.js challenge/static/challenge/javascript/fibonacci.js
+          cmp reference/JAVASCRIPT/styles.css challenge/static/challenge/javascript/styles.css
+          cmp reference/CSS/style.css challenge/static/challenge/login/style.css
+          cmp reference/CSS/style.scss challenge/static/challenge/login/style.scss
+          node --check challenge/static/challenge/javascript/fibonacci.js
+          node --test reference/tests/javascript.test.cjs
       - name: Compare original PHP and JS against Django
         run: python tests/compare_reference.py
 
@@ -136,6 +144,13 @@ jobs:
           grep -q 'Prueba técnica Dinahosting' /tmp/django-home.html
           curl -fsS 'http://localhost:8087/fibonacci/?start_date=ts%3A5&end_date=ts%3A13' | grep -q 'Rango personalizado'
           curl -fsS http://localhost:8087/login/ | grep -q 'Demostración sin autenticación'
+          curl -fsS http://localhost:8087/php/ | grep -q 'Fibonacci en Python y Django'
+          curl -fsS http://localhost:8087/JAVASCRIPT/index.html | grep -q 'fibonacci-form'
+          curl -fsS http://localhost:8087/static/challenge/javascript/fibonacci.js | grep -q 'class BigInteger'
+          curl -fsS http://localhost:8087/static/challenge/javascript/styles.css | grep -q 'result-card'
+          curl -fsS http://localhost:8087/static/challenge/login/style.css | grep -q 'login-card'
+          curl -sSI http://localhost:8087/javascript/ | grep -q "script-src 'self'"
+          curl -sSI http://localhost:8087/login/ | grep -q "script-src 'none'"
           curl -sSI http://localhost:8087/login/ | grep -qi '^Content-Security-Policy:'
           curl -sSI http://localhost:8087/login/ | grep -qi '^X-Content-Type-Options: nosniff'
       - name: Dump Docker logs if failed

@@ -1,0 +1,82 @@
+:root {
+    --bs-body-font-family: "Space Grotesk", sans-serif;
+}
+
+body.login-page {
+    min-height: 100vh;
+    color: #14213d;
+    background:
+        radial-gradient(circle at top right, rgba(217, 119, 6, 0.28), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(20, 33, 61, 0.2), transparent 30%),
+        linear-gradient(135deg, #fff8ef 0%, #eef6ff 100%);
+}
+
+.login-card {
+    padding: 2rem;
+    border: 1px solid rgba(20, 33, 61, 0.1);
+    border-radius: 1.75rem;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 24px 60px rgba(20, 33, 61, 0.18);
+    backdrop-filter: blur(16px);
+}
+
+.login-kicker {
+    margin-bottom: 0.5rem;
+    color: #9a3412;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.login-title {
+    margin-bottom: 0.5rem;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 700;
+}
+
+.login-copy,
+.form-text,
+.form-check-label {
+    color: #4f5d75;
+}
+
+.form-label {
+    font-weight: 700;
+}
+
+.form-control,
+.form-check-input {
+    border-color: rgba(20, 33, 61, 0.16);
+}
+
+.form-control {
+    padding-top: 0.9rem;
+    padding-bottom: 0.9rem;
+}
+
+.form-control:focus,
+.form-check-input:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 0.25rem rgba(217, 119, 6, 0.2);
+}
+
+.btn-brand {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, #d97706, #9a3412);
+    box-shadow: 0 14px 30px rgba(154, 52, 18, 0.28);
+}
+
+.btn-brand:hover,
+.btn-brand:focus {
+    color: #fff;
+    background: linear-gradient(135deg, #c96e05, #8f2f10);
+}
+
+@media (max-width: 575.98px) {
+    .login-card {
+        padding: 1.5rem;
+        border-radius: 1.25rem;
+    }
+}
