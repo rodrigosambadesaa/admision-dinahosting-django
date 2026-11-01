@@ -17,7 +17,9 @@
                 <h1 class="login-title">Inicia sesión</h1>
                 <p class="login-copy">Formulario HTML5 sin JavaScript con validación nativa y estilos apoyados en Bootstrap.</p>
 
-                <form action="https://dinahosting.com/login-usuarios" method="post" accept-charset="UTF-8" autocomplete="on">
+                <p class="form-text" role="note">Demostración sin autenticación: utiliza exclusivamente datos ficticios. No se validan cuentas reales.</p>
+                <form action="{% url 'challenge:login' %}" method="post" accept-charset="UTF-8" autocomplete="off">
+                    {% csrf_token %}
                     <div class="mb-3">
                         <label for="{{ form.usuario.id_for_label }}" class="form-label">{{ form.usuario.label }}</label>
                         {{ form.usuario }}
