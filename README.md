@@ -123,3 +123,5 @@ El documento original `Prueba Tca_PHP.pdf` se copia íntegro; véase
 El formulario declara el destino POST externo **https://dinahosting.com/login-usuarios**
 solicitado por el enunciado; el backend Django no autentica usuarios.
 Utilícense únicamente credenciales ficticias.
+
+El historial del entregable se normalizó con `git filter-repo`, conservando el árbol final verificado. Consulte [HISTORIAL.md](HISTORIAL.md) para el procedimiento de limpieza y las limitaciones de referencias internas de GitHub.
