@@ -1,0 +1,57 @@
+name: Django vs original Fibonacci CPU and RSS benchmark
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fibonacci-benchmark.yml'
+      - 'README.md'
+  pull_request:
+    paths:
+      - '.github/workflows/fibonacci-benchmark.yml'
+      - 'README.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Measure Python, PHP and JavaScript together
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Django under test
+        uses: actions/checkout@v6
+        with:
+          path: django
+          persist-credentials: false
+      - name: Checkout reference and shared benchmark harness
+        uses: actions/checkout@v6
+        with:
+          repository: rodrigosambadesaa/admision-dinahosting
+          ref: c7aeeae6aa9c21580d2c57e553f886d0710ead41
+          path: original
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+      - name: Install Django dependencies
+        run: python -m pip install -r django/requirements.txt
+      - name: Compare CPU and peak RSS on the same runner
+        run: |
+          python original/benchmarks/compare.py \
+            --original-dir original --django-dir django --output-dir benchmark-results
+          cat benchmark-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload summary and raw measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: django-original-fibonacci-${{ github.run_id }}
+          path: benchmark-results/
+          retention-days: 30

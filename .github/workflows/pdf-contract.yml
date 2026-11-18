@@ -1,0 +1,51 @@
+name: Verify original exercise PDF
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pdf-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Original PDF byte-for-byte integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s 'Prueba Tca_PHP.pdf'
+          test "$(git hash-object 'Prueba Tca_PHP.pdf')" = '3fba2fcb5d8dd1fac76a89d6d150f20d44671d04'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install PDF parser
+        run: python -m pip install 'pypdf>=5,<7'
+      - name: Verify three required submission folders and original browser assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for folder in PHP JAVASCRIPT CSS; do test -d "$folder"; done
+          for file in JAVASCRIPT/index.html JAVASCRIPT/fibonacci.js JAVASCRIPT/styles.css CSS/index.html CSS/style.css CSS/style.scss; do test -s "$file"; done
+          test -s PHP/fibonacci.py
+          test -s RESPUESTAS_Y_ADECUACION.md
+          grep -q 'action="https://dinahosting.com/login-usuarios"' CSS/index.html
+          ! grep -Eiq '<script[^>]*>' CSS/index.html
+          cmp JAVASCRIPT/fibonacci.js challenge/static/challenge/javascript/fibonacci.js
+          cmp JAVASCRIPT/styles.css challenge/static/challenge/javascript/styles.css
+          cmp CSS/style.css challenge/static/challenge/login/style.css
+      - name: Extract original PDF requirements
+        run: |
+          python - <<'PY'
+          from pypdf import PdfReader
+          pdf = PdfReader("Prueba Tca_PHP.pdf")
+          assert len(pdf.pages) == 3
+          content = "\\n".join(p.extract_text() for p in pdf.pages)
+          for required in ("Fibonacci", "JAVASCRIPT", "CSS", "UTC", "https://dinahosting.com/login-usuarios"):
+              assert required in content, f"Missing PDF requirement: {required}"
+          for i, page in enumerate(pdf.pages, start=1):
+              print("######## PDF PAGE", i, "########", flush=True)
+              print(page.extract_text(extraction_mode="layout"), flush=True)
+          PY

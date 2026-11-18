@@ -1,0 +1,125 @@
+# Prueba técnica Dinahosting en Django
+
+Reimplementación funcional del [repositorio original en PHP, JavaScript, HTML y CSS](https://github.com/rodrigosambadesaa/admision-dinahosting).
+
+## Equivalencia funcional
+
+- **Portada**: ruta / con acceso a los tres ejercicios.
+- **Calculadora web**: /fibonacci/ muestra el mes actual en UTC, año actual en UTC y un rango personalizado.
+- **CLI**: python manage.py fibonacci INICIO FIN devuelve el mismo contrato JSON del PHP original: current_month, current_year, custom_range; timestamps y valores Fibonacci como cadenas.
+- **Formulario HTML5**: /login/ mantiene la validación y los estilos Bootstrap, pero es una demostración sin autenticación.
+- **Rangos**: los límites se incluyen y se normalizan si llegan invertidos.
+- **Fechas**: formato estricto YYYY-MM-DD HH:MM:SS, en UTC, incluidos años 0000 a 0099 (calendario gregoriano proléptico).
+- **Timestamps sintéticos**: ts:<bigint>, entero con signo opcional de hasta 256 dígitos decimales; no es necesario que represente una fecha real.
+- **Fibonacci**: se conserva la secuencia original 0, 1, 1, 2, 3, 5… y la repetición del valor 1.
+
+El cálculo de timestamps usa aritmética entera, sin conversiones de precisión reducida.
+
+## Desarrollo local
+
+Requiere Python 3.12 o posterior y Django 6.0.6 (requirements.txt).
+
+~~~bash
+python -m pip install -r requirements.txt
+export DJANGO_DEBUG=1
+python manage.py migrate
+python manage.py runserver
+~~~
+
+En Windows PowerShell, usa la variable de entorno equivalente:
+
+~~~powershell
+$env:DJANGO_DEBUG="1"
+python manage.py migrate
+python manage.py runserver
+~~~
+
+La aplicación estará disponible en http://127.0.0.1:8000/.
+
+## Docker (solo desarrollo)
+
+~~~bash
+docker compose up --build web
+~~~
+
+Abre http://localhost:8087. Para cambiar de puerto, define WEB_PORT=8081.
+
+Comando CLI:
+
+~~~bash
+docker compose run --rm django-cli python manage.py fibonacci "ts:5" "ts:13"
+docker compose run --rm django-cli python manage.py fibonacci "2024-02-29 00:00:00" "2024-02-29 23:59:59"
+~~~
+
+La configuración de Compose activa explícitamente DEBUG y utiliza una clave **exclusivamente de desarrollo**. No es adecuada para una aplicación expuesta a internet; en producción usa HTTPS, servidor WSGI/ASGI, un secreto único, hosts autorizados y despliegue correcto de archivos estáticos.
+
+## Tests y GitHub Actions
+
+~~~bash
+DJANGO_DEBUG=1 python manage.py test
+DJANGO_DEBUG=1 python manage.py check
+~~~
+
+La CI ejecuta: tests de Django con Python 3.12, 3.13 y 3.14; verificación de migraciones; comparación diferencial de resultados contra PHP y JavaScript; chequeos de configuración de seguridad para producción; compilación Docker y comprobación HTTP de las rutas públicas y cabeceras.
+
+Para comparar manualmente contra el código original, clona este en la carpeta reference/ y selecciona el commit 3019da805198f46c72656ac673c49ede7fa89406. Con PHP y Node.js instalados:
+
+~~~bash
+DJANGO_DEBUG=1 python tests/compare_reference.py
+~~~
+
+## Configuración y seguridad
+
+- DJANGO_DEBUG=1 habilita desarrollo local. Si no se especifica, DEBUG está desactivado.
+- DJANGO_SECRET_KEY es obligatoria cuando DEBUG está desactivado.
+- DJANGO_ALLOWED_HOSTS contiene los hosts permitidos, separados por comas.
+- Con DEBUG desactivado se activan HTTPS obligatorio, cookies secure y HSTS.
+- La Content Security Policy se devuelve como cabecera HTTP además de las restricciones en plantillas.
+
+**Login solo de demostración:** no guarda ni autentica credenciales. No introduzcas contraseñas reales. El formulario declara el destino POST externo especificado en el PDF; esta aplicación rechaza los POST locales. El envío externo no debe realizarse con credenciales reales. Su objetivo es reproducir el ejercicio visual HTML5/CSS.
+
+## Port de los tres ejercicios originales al navegador Django
+
+Además de reproducir la lógica de Fibonacci en Python, la aplicación conserva ahora la **implementación real de Vanilla JavaScript** de la prueba original, ejecutada directamente en el navegador. No depende de AJAX ni del servidor para calcular y mantiene su propia clase `BigInteger`, validación de entradas, creación segura del DOM y los estilos originales. Los archivos CSS/SCSS del ejercicio de login también se incluyen en Django.
+
+| Ejercicio original | Implementación Django |
+| --- | --- |
+| `/PHP/index.html` | `/php/` (presentación del CLI `manage.py fibonacci`) |
+| `/JAVASCRIPT/index.html` | `/javascript/` (lógica y estilos JavaScript originales) |
+| `/CSS/index.html` | `/login/` (formulario HTML5 con CSS original, envío local no autenticado) |
+| `/index.html` | `/` |
+
+Las rutas originales también responden directamente en Django. Se conserva `/fibonacci/` como calculadora alternativa procesada en el servidor. La CSP permite scripts propios **únicamente** en las rutas del ejercicio JavaScript; en el resto sigue bloqueándolos. La CI coteja los archivos JS/CSS portados con el commit original fijado y ejecuta sus pruebas con Node.js, además de los tests de Django y el smoke de Docker.
+
+
+## Benchmark reproducible de CPU y memoria
+
+El workflow [Django vs original Fibonacci CPU and RSS benchmark](.github/workflows/fibonacci-benchmark.yml) ejecuta PHP, JavaScript y Python/Django en **el mismo runner Ubuntu** mediante el banco de pruebas del repositorio [original](https://github.com/rodrigosambadesaa/admision-dinahosting/tree/master/benchmarks), fijado al commit c7aeeae6aa9c21580d2c57e553f886d0710ead41.
+
+Compara cuatro rangos (de 0 a 21, fechas reales, enteros sintéticos de 80 y 250 dígitos). Hace cinco muestras independientes por lenguaje y caso, descartando una previa, y exige que coincidan el SHA-256 de toda la secuencia, la longitud, el primer y el último valor.
+
+Se publican dos tipos distintos de mediciones:
+
+- **Algoritmo en caliente**: CPU por resolución, sin contar inicialización del intérprete. Memoria máxima RSS del proceso entero, que incluye también el runtime.
+- **CLI completo**: PHP frente al comando de Django, incluyendo inicio del programa, generación y serialización JSON. JavaScript es una aplicación de navegador y no cuenta con un CLI directamente comparable; su núcleo se evalúa sobre Node/V8, no Chrome.
+
+Cada ejecución publica los archivos results.json y summary.md como artefactos de GitHub Actions. Las mediciones en máquinas virtuales compartidas son orientativas, especialmente cuando las diferencias son pequeñas.
+
+Con ambos repositorios descargados en carpetas hermanas llamadas original/ y django/, y PHP, Node y Python instalados, puede reproducirse así:
+
+~~~bash
+python original/benchmarks/compare.py --original-dir original --django-dir django --output-dir benchmark-results
+~~~
+
+
+## Estructura de entrega y PDF original
+
+Se conservan en la raíz las tres carpetas exigidas en la prueba:
+`PHP/` (adaptador a la CLI Django/Python), `JAVASCRIPT/` (Vanilla JS
+autónomo) y `CSS/` (HTML5, Bootstrap, CSS/SCSS sin JS).
+El documento original `Prueba Tca_PHP.pdf` se copia íntegro; véase
+`RESPUESTAS_Y_ADECUACION.md` para las precisiones técnicas de respuestas.
+
+El formulario declara el destino POST externo **https://dinahosting.com/login-usuarios**
+solicitado por el enunciado; el backend Django no autentica usuarios.
+Utilícense únicamente credenciales ficticias.
